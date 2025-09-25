@@ -1,15 +1,27 @@
-# MVP: 
-# Segunda versión con datos estáticos, obstáculos con diferentes costos y dos algoritmos de búsqueda.
-# Resolución utilizando BFS y Dijkstra.
-
-# 0 -> CAMINO LIBRE
-# 1 -> edificio (no se puede pasar)
-# 2 -> agua (obstáculo, pero podría tener un costo mayor en lugar de ser bloqueado)
-# 3 -> zona bloqueada temporalmente
+# Resolución de rutas más corta (menor peso) utilizando el algoritmo de Dijkstra.
 
 from collections import deque
+from enum import Enum
 import heapq # Importamos heapq para la cola de prioridad de Dijkstra
-import random
+
+class TipoCelda(Enum):
+    CAMINO = 0
+    EDIFICIO = 1
+    AGUA = 2
+    BLOQUEO = 3
+
+COSTOS = {
+    TipoCelda.CAMINO: 1,
+    TipoCelda.AGUA: 5,
+    # Edificio y bloqueo no hace falta definir acá, porque su costo es infinito
+}
+
+SIMBOLOS_MAPA = {
+    TipoCelda.CAMINO: "⬜️",
+    TipoCelda.EDIFICIO: "🏢",
+    TipoCelda.AGUA: "💧",
+    TipoCelda.BLOQUEO: "🚧",
+}
 
 def crear_mapa(filas, cols):
     return [[0 for _ in range(cols)] for _ in range(filas)]
@@ -81,11 +93,10 @@ def bfs(mapa, inicio, fin):
 
 # Devuelve el costo de moverse a una celda según su tipo
 def get_costo(celda_valor):
-    if celda_valor == 0: # camino libre:
-        return 1
-    if celda_valor == 2: # Agua:
-        return 5 # Cuesta 5 veces más moverse por agua
-    return float('inf') # Obstáculos como edificios (1) o bloqueos (3) tienen costo infinito
+    # Devuelve el costo de moverse a una celda según su tipo."""
+    # Busca el valor en el diccionario de costos. Si no encuentra,
+    # significa que es un obstáculo infranqueable (costo infinito).
+   return COSTOS.get(TipoCelda(celda_valor), float('inf'))
 
 def dijkstra(mapa, inicio, fin):
     filas, cols = len(mapa), len(mapa[0])
@@ -128,7 +139,7 @@ def dijkstra(mapa, inicio, fin):
             if 0 <= nf < filas and 0 <= nc < cols:
                 costo_movimiento = get_costo(mapa[nf][nc])
                 if costo_movimiento == float('inf'):
-                    continue #No se puede mover a un obstáculo
+                    continue # No se puede mover a un obstáculo
                 
                 nuevo_costo = costo_actual + costo_movimiento
                 if nuevo_costo < distancias[vecino]:
@@ -138,21 +149,17 @@ def dijkstra(mapa, inicio, fin):
     
     return None # No se encontró ruta
 
-def generar_ciudad(mapa, tamanho_bloque, inicio, fin):
+def generar_ciudad(mapa, tamanho_bloque):
     filas = len(mapa)
     cols = len(mapa[0])
 
     for i in range(filas):
         for j in range(cols):
-            # Cada "tamaho_bloque" filas o columnas serán calles
+            # Cada "tamanho_bloque" filas o columnas serán calles
             if i % tamanho_bloque == 0 or j % tamanho_bloque == 0:
-                mapa[i][j] = 0 # calle
+                mapa[i][j] = TipoCelda.CAMINO.value
             else:
-                mapa[i][j] = 1 # edificio
-
-    # Asegurar inicio y fin libres    
-    mapa[inicio[0]][inicio[1]] = 0
-    mapa[fin[0]][fin[1]] = 0
+                mapa[i][j] = TipoCelda.EDIFICIO.value
               
 def pedir_coordenada(mapa, mensaje):
     filas = len(mapa)
@@ -212,19 +219,15 @@ def agregar_obstaculos_usuario(mapa, inicio, fin):
         else:
             print("⚠️ Opción inválida")            
             
-if __name__ == "__main__":
-
+def main():
     print("🚗🚗 Bienvenido a la calculadora de rutas 🚗🚗")
     filas = int(input("Ingrese un número para el números de filas: "))
     cols = int(input("Ingrese un número para el números de columnas: "))
     
-    mapa = crear_mapa(filas,cols)
+    mapa = crear_mapa(filas,cols)    
+    generar_ciudad(mapa, tamanho_bloque=3)
+    mostrar_mapa(mapa)
     
-    inicio = (0,0)
-    fin = (filas-1,cols-1)
-
-    generar_ciudad(mapa, tamanho_bloque=3, inicio=inicio, fin=fin)
-
     inicio = pedir_coordenada(mapa, "Ingrese coordenadas de INICIO 🏁")
     fin = pedir_coordenada(mapa, "Ingrese coordenadas de DESTINO 📍")
 
@@ -238,3 +241,6 @@ if __name__ == "__main__":
         print("No hay ruta posible")
         
     agregar_obstaculos_usuario(mapa, inicio, fin)    
+
+if __name__ == "__main__":
+    main()
