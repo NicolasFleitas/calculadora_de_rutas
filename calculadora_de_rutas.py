@@ -1,6 +1,6 @@
 # MVP: 
-# Primera versión con datos estáticos y simulación de obstáculos fijos (con el mismo valor)
-# Resolución utilizando bfs.
+# Segunda versión con datos estáticos, obstáculos con diferentes costos y dos algoritmos de búsqueda.
+# Resolución utilizando BFS y Dijkstra.
 
 # 0 -> CAMINO LIBRE
 # 1 -> edificio (no se puede pasar)
@@ -8,6 +8,7 @@
 # 3 -> zona bloqueada temporalmente
 
 from collections import deque
+import heapq # Importamos heapq para la cola de prioridad de Dijkstra
 import random
 
 def crear_mapa(filas, cols):
@@ -15,7 +16,7 @@ def crear_mapa(filas, cols):
 
 # Funcion para visualizar datos en consola
 def mostrar_mapa(mapa, ruta=None, inicio=None, fin=None):
-    simbolos = {0: ".", 1: "X", 2: "X", 3: "X"}
+    simbolos = {0: "⬜️", 1: "🏢", 2: "💧", 3: "🚧"}
     ruta_set = set(ruta) if ruta else set()
 
     for i, fila in enumerate(mapa):
@@ -24,11 +25,11 @@ def mostrar_mapa(mapa, ruta=None, inicio=None, fin=None):
             pos = (i, j)
 
             if pos == inicio:
-                linea += "S "
+                linea += "🏁 "
             elif pos == fin:
-                linea += "D "
+                linea += "📍 "
             elif pos in ruta_set:
-                linea += "* "
+                linea += "🚗 "
             else:
                 linea += simbolos[celda] + " "
         print(linea)
@@ -40,7 +41,7 @@ def es_valido(mapa, fila, col):
     return (
         0 <= fila < len(mapa)
         and 0 <= col < len(mapa[0])
-        and mapa[fila][col] == 0
+        and mapa[fila][col] == 0 # BFS solo se mueve por camino libre (costo 1)
     )
 
 # bfs para rutas
@@ -76,6 +77,65 @@ def bfs(mapa, inicio, fin):
                 visitados.add(vecino)
                 padres[vecino] = actual
                 cola.append(vecino)    
+    return None # No se encontró ruta
+
+# Devuelve el costo de moverse a una celda según su tipo
+def get_costo(celda_valor):
+    if celda_valor == 0: # camino libre:
+        return 1
+    if celda_valor == 2: # Agua:
+        return 5 # Cuesta 5 veces más moverse por agua
+    return float('inf') # Obstáculos como edificios (1) o bloqueos (3) tienen costo infinito
+
+def dijkstra(mapa, inicio, fin):
+    filas, cols = len(mapa), len(mapa[0])
+
+    # Verifica si el inicio o el fin están en un obstáculo infranqueable
+    if get_costo(mapa[inicio[0]][inicio[1]]) == float('inf') or get_costo(mapa[fin[0]][fin[1]]) == float('inf'):
+        return None
+    
+    distancias = {} 
+
+    for f in range(filas):
+        for c in range(cols):
+            distancias[(f,c)] = float('inf')
+    
+    distancias[inicio] = 0
+    padres = {inicio: None}
+
+    # Cola de prioridad: (costo, posición)
+    colap = [(0, inicio)]
+
+    while colap:
+        costo_actual, actual = heapq.heappop(colap) 
+
+        if actual == fin:
+            # Reconstruir ruta
+            ruta = []
+            while actual is not None:
+                ruta.append(actual)
+                actual = padres.get(actual)
+            
+            return ruta[::-1]
+        
+        fila, col = actual
+        movimientos = [(-1,0), (1,0), (0,-1), (0,1)]
+        # OJO: Nombres de variables: fila-col
+        for df, dc in movimientos:
+            nf, nc = fila + df, col + dc
+            vecino = (nf, nc)
+
+            if 0 <= nf < filas and 0 <= nc < cols:
+                costo_movimiento = get_costo(mapa[nf][nc])
+                if costo_movimiento == float('inf'):
+                    continue #No se puede mover a un obstáculo
+                
+                nuevo_costo = costo_actual + costo_movimiento
+                if nuevo_costo < distancias[vecino]:
+                    distancias[vecino] = nuevo_costo
+                    padres[vecino] = actual
+                    heapq.heappush(colap, (nuevo_costo, vecino))
+    
     return None # No se encontró ruta
 
 def generar_ciudad(mapa, tamanho_bloque, inicio, fin):
@@ -116,9 +176,9 @@ def pedir_coordenada(mapa, mensaje):
 def agregar_obstaculos_usuario(mapa, inicio, fin):
     while True:
         print("\n--- Menú de obstáculos ---")
-        print("1: Agregar edificio (bloqueo permanente)")
-        print("2: Agregar agua (obstáculo con ruta alternativa)")
-        print("3: Agregar zona bloqueada temporalmente")
+        print("1: Agregar edificio 🏢")
+        print("2: Agregar agua 💧")
+        print("3: Agregar zona bloqueada 🚧")
         print("0: Terminar")
 
         opcion = input("Elige una opción: ")
@@ -137,45 +197,44 @@ def agregar_obstaculos_usuario(mapa, inicio, fin):
                     print(f"✅ Obstáculo agregado en ({fila}, {col})")
 
                     # Recalcular ruta automáticamente
-                    ruta = bfs(mapa, inicio, fin)
+                    # ruta = bfs(mapa, inicio, fin)
+                    ruta = dijkstra(mapa, inicio, fin)
                     if ruta:
                         print("Ruta recalculada ✅")
                         mostrar_mapa(mapa, ruta, inicio, fin)
                     else: 
                         print("No hay ruta posible 😥")
                         mostrar_mapa(mapa, None, inicio, fin)
-
                 else: 
                     print("❌ Coordenadas fuera del mapa.")
             except ValueError:
                 print("⚠️ Formato incorrecto, usa fila,col (ej: 2,3)")
         else:
-            print("⚠️ Opción inválida")
+            print("⚠️ Opción inválida")            
             
-            
-
 if __name__ == "__main__":
 
     print("🚗🚗 Bienvenido a la calculadora de rutas 🚗🚗")
     filas = int(input("Ingrese un número para el números de filas: "))
     cols = int(input("Ingrese un número para el números de columnas: "))
     
-    mapa = crear_mapa(filas,cols)    
+    mapa = crear_mapa(filas,cols)
     
     inicio = (0,0)
     fin = (filas-1,cols-1)
 
     generar_ciudad(mapa, tamanho_bloque=3, inicio=inicio, fin=fin)
 
-    inicio = pedir_coordenada(mapa, "Ingrese coordenadas de INICIO")
-    fin = pedir_coordenada(mapa, "Ingrese coordenadas de DESTINO")
+    inicio = pedir_coordenada(mapa, "Ingrese coordenadas de INICIO 🏁")
+    fin = pedir_coordenada(mapa, "Ingrese coordenadas de DESTINO 📍")
 
-    agregar_obstaculos_usuario(mapa, inicio, fin)
-    
-    ruta = bfs(mapa, inicio, fin)
+    ruta = dijkstra(mapa, inicio, fin)
+    #ruta = bfs(mapa, inicio, fin)
 
     if ruta:
         print("Ruta encontrada ✅")
         mostrar_mapa(mapa, ruta, inicio, fin)
     else: 
         print("No hay ruta posible")
+        
+    agregar_obstaculos_usuario(mapa, inicio, fin)    
