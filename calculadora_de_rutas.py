@@ -1,6 +1,5 @@
 # Resolución de rutas más corta (menor peso) utilizando el algoritmo de Dijkstra.
 
-from collections import deque
 from enum import Enum
 import heapq # Importamos heapq para la cola de prioridad de Dijkstra
 
@@ -17,7 +16,7 @@ COSTOS = {
 }
 
 SIMBOLOS_MAPA = {
-    TipoCelda.CAMINO: "⬜️",
+    TipoCelda.CAMINO: "⬛",
     TipoCelda.EDIFICIO: "🏢",
     TipoCelda.AGUA: "💧",
     TipoCelda.BLOQUEO: "🚧",
@@ -28,7 +27,7 @@ def crear_mapa(filas, cols):
 
 # Funcion para visualizar datos en consola
 def mostrar_mapa(mapa, ruta=None, inicio=None, fin=None):
-    simbolos = {0: "⬜️", 1: "🏢", 2: "💧", 3: "🚧"}
+    simbolos = {0: "⬛", 1: "🏢", 2: "💧", 3: "🚧"}
     ruta_set = set(ruta) if ruta else set()
 
     for i, fila in enumerate(mapa):
@@ -46,50 +45,6 @@ def mostrar_mapa(mapa, ruta=None, inicio=None, fin=None):
                 linea += simbolos[celda] + " "
         print(linea)
     print()
-
-# Validar posiciones
-def es_valido(mapa, fila, col):
-    # Valida que una coordenada esté dentro del mapa y sea transitable.
-    return (
-        0 <= fila < len(mapa)
-        and 0 <= col < len(mapa[0])
-        and mapa[fila][col] == 0 # BFS solo se mueve por camino libre (costo 1)
-    )
-
-# bfs para rutas
-def bfs(mapa, inicio, fin):
-
-    if not es_valido(mapa, inicio[0], inicio[1]) or not es_valido(mapa, fin[0], fin[1]):
-        return None
-
-    # retorna la lista de coordenadas que forman la ruta o None si no existe
-    movimientos = [(-1, 0), (1, 0), (0, -1), (0, 1)] # N, S, O, E
-    visitados = set([inicio])
-    padres = {inicio: None} # Guarda de dónde vino cada nodo
-    cola = deque([inicio]) # La cola solo guarda posiciones
-
-    while cola:
-        actual = cola.popleft() # Extrae el 1° elemento de la cola, es el Nodo a explorar en el paso actual
-
-        if actual == fin: # Si nodo actual es el destino, la búsqueda terminó con éxito.
-            # reconstruir ruta desde fin -> inicio
-            ruta = []
-            while actual is not None:
-                ruta.append(actual)
-                actual = padres[actual]
-            return ruta[::-1]  # invertimos para inicio -> fin
-        
-        fila, col = actual
-
-        for df, dc in movimientos:
-            nf, nc = fila + df, col + dc
-            vecino = (nf, nc)
-
-            if es_valido(mapa, nf, nc) and vecino not in visitados:
-                visitados.add(vecino)
-                padres[vecino] = actual
-                cola.append(vecino)    
-    return None # No se encontró ruta
 
 # Devuelve el costo de moverse a una celda según su tipo
 def get_costo(celda_valor):
@@ -204,7 +159,6 @@ def agregar_obstaculos_usuario(mapa, inicio, fin):
                     print(f"✅ Obstáculo agregado en ({fila}, {col})")
 
                     # Recalcular ruta automáticamente
-                    # ruta = bfs(mapa, inicio, fin)
                     ruta = dijkstra(mapa, inicio, fin)
                     if ruta:
                         print("Ruta recalculada ✅")
@@ -232,7 +186,6 @@ def main():
     fin = pedir_coordenada(mapa, "Ingrese coordenadas de DESTINO 📍")
 
     ruta = dijkstra(mapa, inicio, fin)
-    #ruta = bfs(mapa, inicio, fin)
 
     if ruta:
         print("Ruta encontrada ✅")
