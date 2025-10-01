@@ -1,7 +1,5 @@
-# Resolución de rutas más corta (menor peso) utilizando el algoritmo de Dijkstra.
-
 from enum import Enum
-import heapq # Importamos heapq para la cola de prioridad de Dijkstra
+import heapq # Para la cola de prioridad de Dijkstra
 
 class TipoCelda(Enum):
     CAMINO = 0
@@ -10,24 +8,34 @@ class TipoCelda(Enum):
     BLOQUEO = 3
 
 COSTOS = {
-    TipoCelda.CAMINO: 1,
-    TipoCelda.AGUA: 5,
-    # Edificio y bloqueo no hace falta definir acá, porque su costo es infinito
+    TipoCelda.CAMINO.value: 1,
+    TipoCelda.AGUA.value: 3,    
 }
 
 SIMBOLOS_MAPA = {
-    TipoCelda.CAMINO: "⬛",
-    TipoCelda.EDIFICIO: "🏢",
-    TipoCelda.AGUA: "💧",
-    TipoCelda.BLOQUEO: "🚧",
+    TipoCelda.CAMINO.value: "⬛",
+    TipoCelda.EDIFICIO.value: "🏢",
+    TipoCelda.AGUA.value: "💧",
+    TipoCelda.BLOQUEO.value: "🚧",
 }
 
 def crear_mapa(filas, cols):
     return [[0 for _ in range(cols)] for _ in range(filas)]
 
-# Funcion para visualizar datos en consola
+def generar_ciudad(mapa, tamanho_bloque):
+    filas = len(mapa)
+    cols = len(mapa[0])
+
+    for i in range(filas):
+        for j in range(cols):
+            # Cada "tamanho_bloque" filas o columnas serán calles
+            if i % tamanho_bloque == 0 or j % tamanho_bloque == 0:
+                mapa[i][j] = TipoCelda.CAMINO.value
+            else:
+                mapa[i][j] = TipoCelda.EDIFICIO.value
+ 
 def mostrar_mapa(mapa, ruta=None, inicio=None, fin=None):
-    simbolos = {0: "⬛", 1: "🏢", 2: "💧", 3: "🚧"}
+    # Convierte la lista 'ruta' a un set. Si está vacía o es None, usa un set vacío para seguridad. 
     ruta_set = set(ruta) if ruta else set()
 
     for i, fila in enumerate(mapa):
@@ -42,30 +50,37 @@ def mostrar_mapa(mapa, ruta=None, inicio=None, fin=None):
             elif pos in ruta_set:
                 linea += "🚗 "
             else:
-                linea += simbolos[celda] + " "
+                linea += SIMBOLOS_MAPA[celda] + " "
         print(linea)
     print()
 
-# Devuelve el costo de moverse a una celda según su tipo
-def get_costo(celda_valor):
-    # Devuelve el costo de moverse a una celda según su tipo."""
-    # Busca el valor en el diccionario de costos. Si no encuentra,
-    # significa que es un obstáculo infranqueable (costo infinito).
-   return COSTOS.get(TipoCelda(celda_valor), float('inf'))
+def pedir_coordenada(mapa, mensaje):
+    filas = len(mapa)
+    cols = len(mapa[0])
+
+    while True:
+        try: 
+            entrada = input(f"{mensaje} (fila,col): ")
+            fila, col = map(int, entrada.split(","))
+
+            if 0 <= fila < filas and 0 <= col < cols:
+                if mapa[fila][col] == 0:
+                    return (fila, col)
+                else:
+                    print("❌ Esa celda es un obstáculo, elige otra.")
+            else:
+                print("❌ Coordenadas fuera del mapa.")
+        except ValueError:
+            print("⚠️ Ingresa en el formato correcto: fila,col (ej: 2,3)")
 
 def dijkstra(mapa, inicio, fin):
     filas, cols = len(mapa), len(mapa[0])
 
-    # Verifica si el inicio o el fin están en un obstáculo infranqueable
+    # Verifica si el inicio o el fin están en un obstáculo
     if get_costo(mapa[inicio[0]][inicio[1]]) == float('inf') or get_costo(mapa[fin[0]][fin[1]]) == float('inf'):
         return None
     
-    distancias = {} 
-
-    for f in range(filas):
-        for c in range(cols):
-            distancias[(f,c)] = float('inf')
-    
+    distancias = { (f,c): float('inf') for f in range(filas) for c in range(filas) }     
     distancias[inicio] = 0
     padres = {inicio: None}
 
@@ -104,36 +119,10 @@ def dijkstra(mapa, inicio, fin):
     
     return None # No se encontró ruta
 
-def generar_ciudad(mapa, tamanho_bloque):
-    filas = len(mapa)
-    cols = len(mapa[0])
-
-    for i in range(filas):
-        for j in range(cols):
-            # Cada "tamanho_bloque" filas o columnas serán calles
-            if i % tamanho_bloque == 0 or j % tamanho_bloque == 0:
-                mapa[i][j] = TipoCelda.CAMINO.value
-            else:
-                mapa[i][j] = TipoCelda.EDIFICIO.value
-              
-def pedir_coordenada(mapa, mensaje):
-    filas = len(mapa)
-    cols = len(mapa[0])
-
-    while True:
-        try: 
-            entrada = input(f"{mensaje} (fila,col): ")
-            fila, col = map(int, entrada.split(","))
-
-            if 0 <= fila < filas and 0 <= col < cols:
-                if mapa[fila][col] == 0:
-                    return (fila, col)
-                else:
-                    print("❌ Esa celda es un obstáculo, elige otra.")
-            else:
-                print("❌ Coordenadas fuera del mapa.")
-        except ValueError:
-            print("⚠️ Ingresa en el formato correcto: fila,col (ej: 2,3)")
+# Devuelve el costo de moverse a una celda según su tipo
+# Si la clave (el valor entero) no existe, devuelve float('inf')
+def get_costo(celda_valor):
+   return COSTOS.get(celda_valor, float('inf'))
 
 def agregar_obstaculos_usuario(mapa, inicio, fin):
     while True:
@@ -158,7 +147,7 @@ def agregar_obstaculos_usuario(mapa, inicio, fin):
                     mapa[fila][col] = int(opcion)
                     print(f"✅ Obstáculo agregado en ({fila}, {col})")
 
-                    # Recalcular ruta automáticamente
+                    # Recalcular ruta
                     ruta = dijkstra(mapa, inicio, fin)
                     if ruta:
                         print("Ruta recalculada ✅")
@@ -169,14 +158,23 @@ def agregar_obstaculos_usuario(mapa, inicio, fin):
                 else: 
                     print("❌ Coordenadas fuera del mapa.")
             except ValueError:
-                print("⚠️ Formato incorrecto, usa fila,col (ej: 2,3)")
+                print("⚠️ Formato incorrecto, usa fila,col (ej: 3,4)")
         else:
-            print("⚠️ Opción inválida")            
-            
+            print("⚠️ Opción inválida")       
+
+def validar_entrada_entero(mensaje):
+    while True:
+        entrada = input(mensaje)
+        try:           
+            numero_entero = int(entrada)           
+            return numero_entero
+        except ValueError:           
+            print("❌ Entrada no válida. Por favor, ingrese un número entero.")
+
 def main():
     print("🚗🚗 Bienvenido a la calculadora de rutas 🚗🚗")
-    filas = int(input("Ingrese un número para el números de filas: "))
-    cols = int(input("Ingrese un número para el números de columnas: "))
+    filas = validar_entrada_entero("Ingrese el alto del mapa: ")
+    cols = validar_entrada_entero("Ingrese el ancho del mapa: ")
     
     mapa = crear_mapa(filas,cols)    
     generar_ciudad(mapa, tamanho_bloque=3)
