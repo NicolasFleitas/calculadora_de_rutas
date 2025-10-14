@@ -1,5 +1,5 @@
 from enum import Enum
-import heapq # Para la cola de prioridad de Dijkstra
+import heapq
 
 class TipoCelda(Enum):
     CAMINO = 0
@@ -7,11 +7,14 @@ class TipoCelda(Enum):
     AGUA = 2
     BLOQUEO = 3
 
+# Diccionario de Costos
+
 COSTOS = {
     TipoCelda.CAMINO.value: 1,
     TipoCelda.AGUA.value: 3,    
 }
 
+# Diccionario de Simbolos 
 SIMBOLOS_MAPA = {
     TipoCelda.CAMINO.value: "⬛",
     TipoCelda.EDIFICIO.value: "🏢",
@@ -19,6 +22,7 @@ SIMBOLOS_MAPA = {
     TipoCelda.BLOQUEO.value: "🚧",
 }
 
+# Creo una matriz de tamaño (filas x cols) llena de ceros
 def crear_mapa(filas, cols):
     return [[0 for _ in range(cols)] for _ in range(filas)]
 
@@ -74,48 +78,48 @@ def pedir_coordenada(mapa, mensaje):
             print("⚠️ Ingresa en el formato correcto: fila,col (ej: 2,3)")
 
 def dijkstra(mapa, inicio, fin):
+   
     filas, cols = len(mapa), len(mapa[0])
-
-    # Verifica si el inicio o el fin están en un obstáculo
-    if get_costo(mapa[inicio[0]][inicio[1]]) == float('inf') or get_costo(mapa[fin[0]][fin[1]]) == float('inf'):
-        return None
-    
-    distancias = { (f,c): float('inf') for f in range(filas) for c in range(filas) }     
-    distancias[inicio] = 0
-    padres = {inicio: None}
+    # Inicializo el diccionario de distancias para todos los puntos (f,c) de la cuadrícula a un valor de infinito 
+    distancias = { (f,c): float('inf') for f in range(filas) for c in range(cols) }      
+    distancias[inicio] = 0 # Asignamos el valor 0 al inicio, que corresonde a su costo.
+    padres = {inicio: None} # Asi tambien en el dicionario de padres, indicamos que el nodo de inicio no tiene predecesor.
 
     # Cola de prioridad: (costo, posición)
-    colap = [(0, inicio)]
+    cola_prioridad = [(0, inicio)]
 
-    while colap:
-        costo_actual, actual = heapq.heappop(colap) 
+    while cola_prioridad: # Mientras la cola de prioridad no este vacía, iteramos.
+        costo_actual, nodo_actual = heapq.heappop(cola_prioridad) # desempaquetamos el costo y el nodo_actual de la cola de prioridad
 
-        if actual == fin:
-            # Reconstruir ruta
-            ruta = []
-            while actual is not None:
-                ruta.append(actual)
-                actual = padres.get(actual)
+        if nodo_actual == fin: # Cuando encontramos el nodo destino empezamos a reconstruir la ruta
+            ruta = [] 
+            while nodo_actual is not None: # Mientras que el nodo_actual no sea None.
+                ruta.append(nodo_actual) # Agregamos a la lista de rutas el nodo_actual
+                nodo_actual = padres.get(nodo_actual) # el nodo actual lo quitamos del diccionario de padres con el metodo get
             
-            return ruta[::-1]
+            return ruta[::-1] # retornamos la ruta de forma inversa utilizando slices de python
         
-        fila, col = actual
-        movimientos = [(-1,0), (1,0), (0,-1), (0,1)]
-        # OJO: Nombres de variables: fila-col
-        for df, dc in movimientos:
-            nf, nc = fila + df, col + dc
-            vecino = (nf, nc)
+        f, c = nodo_actual # obtengo la coordenada en f(fila) y c(columna) del nodo actual
 
-            if 0 <= nf < filas and 0 <= nc < cols:
-                costo_movimiento = get_costo(mapa[nf][nc])
+        movimientos = [(-1,0), (1,0), (0,-1), (0,1)] # Lista de movimientos posibles Up,Down,Left,Right
+    
+        for df, dc in movimientos:
+            nf, nc = f + df, c + dc # calculo el valor de nf(nueva fila) y nc(nueva columna) 
+            vecino = (nf, nc) # Inicializo una tupla con nombre vecino, con los nuevos valores de las coordenadas nf y nc
+
+            if 0 <= nf < filas and 0 <= nc < cols: # valido que la nueva posicion no se salga de los limites de la matriz
+                costo_movimiento = get_costo(mapa[nf][nc]) # obtenemos el valor de esa celda. Ej. Camino = 0 Agua = 2
                 if costo_movimiento == float('inf'):
                     continue # No se puede mover a un obstáculo
                 
-                nuevo_costo = costo_actual + costo_movimiento
-                if nuevo_costo < distancias[vecino]:
-                    distancias[vecino] = nuevo_costo
-                    padres[vecino] = actual
-                    heapq.heappush(colap, (nuevo_costo, vecino))
+                # Calcula el costo total para llegar al vecino a través del camino actual.
+                nuevo_costo = costo_actual + costo_movimiento 
+                # Si el nuevo_costo es menor al VALOR correspondiente del diccionario distancias con clave del VECINO.
+                if nuevo_costo < distancias[vecino]: 
+                    nuevo_costo = costo_actual + costo_movimiento # Acumulamos el costo
+                    distancias[vecino] = nuevo_costo 
+                    padres[vecino] = nodo_actual 
+                    heapq.heappush(cola_prioridad, (nuevo_costo, vecino)) 
     
     return None # No se encontró ruta
 
@@ -181,7 +185,12 @@ def main():
     mostrar_mapa(mapa)
     
     inicio = pedir_coordenada(mapa, "Ingrese coordenadas de INICIO 🏁")
-    fin = pedir_coordenada(mapa, "Ingrese coordenadas de DESTINO 📍")
+    while True:
+        fin = pedir_coordenada(mapa, "Ingrese coordenadas de DESTINO 📍")
+        if fin == inicio:
+            print("El fin no puede ser igual al inicio")
+        else:
+            break
 
     ruta = dijkstra(mapa, inicio, fin)
 
