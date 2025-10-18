@@ -89,14 +89,14 @@ def dijkstra(mapa, inicio, fin):
     cola_prioridad = [(0, inicio)]
 
     while cola_prioridad: # Mientras la cola de prioridad no este vacía, iteramos.
-        costo_actual, nodo_actual = heapq.heappop(cola_prioridad) # desempaquetamos el costo y el nodo_actual de la cola de prioridad
+        costo_actual, nodo_actual = heapq.heappop(cola_prioridad) # Sacamos el nodo con el costo más bajo de la cola de prioridad
 
         if nodo_actual == fin: # Cuando encontramos el nodo destino empezamos a reconstruir la ruta
             ruta = [] 
             while nodo_actual is not None: # Mientras que el nodo_actual no sea None.
                 ruta.append(nodo_actual) # Agregamos a la lista de rutas el nodo_actual
-                nodo_actual = padres.get(nodo_actual) # el nodo actual lo quitamos del diccionario de padres con el metodo get
-            
+                nodo_actual = padres.get(nodo_actual) # Actualizamos el nodo_actual con su padre
+
             return ruta[::-1] # retornamos la ruta de forma inversa utilizando slices de python
         
         f, c = nodo_actual # obtengo la coordenada en f(fila) y c(columna) del nodo actual
@@ -109,24 +109,22 @@ def dijkstra(mapa, inicio, fin):
 
             if 0 <= nf < filas and 0 <= nc < cols: # valido que la nueva posicion no se salga de los limites de la matriz
                 costo_movimiento = get_costo(mapa[nf][nc]) # obtenemos el valor de esa celda. Ej. Camino = 0 Agua = 2
-                if costo_movimiento == float('inf'):
+                if costo_movimiento == float('inf'): # Si el costo es infinito, es un obstáculo
                     continue # No se puede mover a un obstáculo
                 
                 # Calcula el costo total para llegar al vecino a través del camino actual.
-                nuevo_costo = costo_actual + costo_movimiento 
-                # Si el nuevo_costo es menor al VALOR correspondiente del diccionario distancias con clave del VECINO.
-                if nuevo_costo < distancias[vecino]: 
-                    nuevo_costo = costo_actual + costo_movimiento # Acumulamos el costo
-                    distancias[vecino] = nuevo_costo 
-                    padres[vecino] = nodo_actual 
-                    heapq.heappush(cola_prioridad, (nuevo_costo, vecino)) 
-    
+                costo_total = costo_actual + costo_movimiento 
+                # Si el costo_total es menor al VALOR correspondiente del diccionario distancias con clave del VECINO.
+                if costo_total < distancias[vecino]: # Si encontramos un camino más barato al vecino                    
+                    distancias[vecino] = costo_total # Actualizamos el costo en el diccionario distancias
+                    padres[vecino] = nodo_actual  # Actualizamos el padre del vecino al nodo actual 
+                    heapq.heappush(cola_prioridad, (costo_total, vecino)) # Agregamos a la cola de prioridad el nuevo costo y el vecino
     return None # No se encontró ruta
 
 # Devuelve el costo de moverse a una celda según su tipo
 # Si la clave (el valor entero) no existe, devuelve float('inf')
 def get_costo(celda_valor):
-   return COSTOS.get(celda_valor, float('inf'))
+   return COSTOS.get(celda_valor, float('inf')) # Si no existe, retorna infinito
 
 def agregar_obstaculos_usuario(mapa, inicio, fin):
     while True:
@@ -201,6 +199,8 @@ def main():
         print("No hay ruta posible")
         
     agregar_obstaculos_usuario(mapa, inicio, fin)    
+
+
 
 if __name__ == "__main__":
     main()
