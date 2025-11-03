@@ -7,14 +7,13 @@ class TipoCelda(Enum):
     AGUA = 2
     BLOQUEO = 3
 
-# Diccionario de Costos
-
+# Diccionario de COSTOS
 COSTOS = {
     TipoCelda.CAMINO.value: 1,
     TipoCelda.AGUA.value: 3,    
 }
 
-# Diccionario de Simbolos 
+# Diccionario de SIMBOLOS - EMOJIS 
 SIMBOLOS_MAPA = {
     TipoCelda.CAMINO.value: "⬛",
     TipoCelda.EDIFICIO.value: "🏢",
@@ -24,7 +23,7 @@ SIMBOLOS_MAPA = {
 
 # Creo una matriz de tamaño (filas x cols) llena de ceros
 def crear_mapa(filas, cols):
-    return [[0 for _ in range(cols)] for _ in range(filas)]
+    return [[0 for _ in range(cols)] for _ in range(filas)]       
 
 def generar_ciudad(mapa, tamanho_bloque):
     filas = len(mapa)
@@ -32,14 +31,14 @@ def generar_ciudad(mapa, tamanho_bloque):
 
     for i in range(filas):
         for j in range(cols):
-            # Cada "tamanho_bloque" filas o columnas serán calles
+            # Cada "tamanho_bloque" (fila,columna) serán CAMINO
             if i % tamanho_bloque == 0 or j % tamanho_bloque == 0:
                 mapa[i][j] = TipoCelda.CAMINO.value
             else:
                 mapa[i][j] = TipoCelda.EDIFICIO.value
  
 def mostrar_mapa(mapa, ruta=None, inicio=None, fin=None):
-    # Convierte la lista 'ruta' a un set. Si está vacía o es None, usa un set vacío para seguridad. 
+    # Convierte la lista 'ruta' a un set. Si está vacía o es None
     ruta_set = set(ruta) if ruta else set()
 
     for i, fila in enumerate(mapa):
@@ -68,36 +67,36 @@ def pedir_coordenada(mapa, mensaje):
             fila, col = map(int, entrada.split(","))
 
             if 0 <= fila < filas and 0 <= col < cols:
-                if mapa[fila][col] == 0:
+                if mapa[fila][col] == 0:  # Si la celda es CAMINO
                     return (fila, col)
                 else:
                     print("❌ Esa celda es un obstáculo, elige otra.")
             else:
                 print("❌ Coordenadas fuera del mapa.")
+
         except ValueError:
             print("⚠️ Ingresa en el formato correcto: fila,col (ej: 2,3)")
 
 def dijkstra(mapa, inicio, fin):
    
     filas, cols = len(mapa), len(mapa[0])
-    # Inicializo el diccionario de distancias para todos los puntos (f,c) de la cuadrícula a un valor de infinito 
     distancias = { (f,c): float('inf') for f in range(filas) for c in range(cols) }      
-    distancias[inicio] = 0 # Asignamos el valor 0 al inicio, que corresonde a su costo.
-    padres = {inicio: None} # Asi tambien en el dicionario de padres, indicamos que el nodo de inicio no tiene predecesor.
+    distancias[inicio] = 0 
+    padres = {inicio: None} # Indicamos que el nodo de inicio no tiene predecesor
 
-    # Cola de prioridad: (costo, posición)
-    cola_prioridad = [(0, inicio)]
+    
+    cola_prioridad = [(0, inicio)] # Cola de prioridad: Costo, posición
 
     while cola_prioridad: # Mientras la cola de prioridad no este vacía, iteramos.
-        costo_actual, nodo_actual = heapq.heappop(cola_prioridad) # Sacamos el nodo con el costo más bajo de la cola de prioridad
 
-        if nodo_actual == fin: # Cuando encontramos el nodo destino empezamos a reconstruir la ruta
-            ruta = [] 
+        costo_actual, nodo_actual = heapq.heappop(cola_prioridad) # obtenemos el costo y nodo_actual de la cola
+
+        if nodo_actual == fin: # Cuando lleguemos al nodo destino empezamos a reconstruir la ruta
+            ruta = []             
             while nodo_actual is not None: # Mientras que el nodo_actual no sea None.
                 ruta.append(nodo_actual) # Agregamos a la lista de rutas el nodo_actual
-                nodo_actual = padres.get(nodo_actual) # Actualizamos el nodo_actual con su padre
-
-            return ruta[::-1] # retornamos la ruta de forma inversa utilizando slices de python
+                nodo_actual = padres.get(nodo_actual) # obtenemos el padre del nodo_actual                           
+            return ruta[::-1] # Retornar ruta de forma inversa
         
         f, c = nodo_actual # obtengo la coordenada en f(fila) y c(columna) del nodo actual
 
@@ -115,10 +114,11 @@ def dijkstra(mapa, inicio, fin):
                 # Calcula el costo total para llegar al vecino a través del camino actual.
                 costo_total = costo_actual + costo_movimiento 
                 # Si el costo_total es menor al VALOR correspondiente del diccionario distancias con clave del VECINO.
-                if costo_total < distancias[vecino]: # Si encontramos un camino más barato al vecino                    
-                    distancias[vecino] = costo_total # Actualizamos el costo en el diccionario distancias
-                    padres[vecino] = nodo_actual  # Actualizamos el padre del vecino al nodo actual 
-                    heapq.heappush(cola_prioridad, (costo_total, vecino)) # Agregamos a la cola de prioridad el nuevo costo y el vecino
+                if costo_total < distancias[vecino]: 
+                    costo_total = costo_actual + costo_movimiento # Acumulamos el costo
+                    distancias[vecino] = costo_total 
+                    padres[vecino] = nodo_actual 
+                    heapq.heappush(cola_prioridad, (costo_total, vecino))     
     return None # No se encontró ruta
 
 # Devuelve el costo de moverse a una celda según su tipo
@@ -204,3 +204,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
